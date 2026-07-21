@@ -1,18 +1,19 @@
 import { useCallback, useMemo, useState } from "react";
 import { ComparativoRow, ComparativoStats } from "@/types/config";
 import { ConvertidosMap } from "@/types/convertido";
-import { getComparativo, getFollowUp } from "@/services/compareService";
+import { getComparativo } from "@/services/compareService";
 import {
   getConvertidosPath,
   getEnviadosPath,
-  exportFollowUpCsv,
+  exportCsvFile,
   pickGrupoAtualizadoFile,
   readConvertidos,
   readEnviados,
   readMembros,
   writeConvertidos
 } from "@/services/dataService";
-import { buildFollowUpCsv } from "@/services/csvService";
+import { buildConvertidosCsv, buildFollowUpCsv } from "@/services/csvService";
+import { usePagination } from "@/hooks/usePagination";
 
 export function useComparativoData() {
   const [linhas, setLinhas] = useState<ComparativoRow[]>([]);
@@ -45,9 +46,7 @@ export function useComparativoData() {
       setStats(resultado.stats);
       setArquivoGrupoNome(grupoPath.split(/[\\/]/).pop() ?? grupoPath);
 
-      // convertidos.json e sempre regravado ao final de cada comparacao,
-      // refletindo o estado completo (confirmacoes antigas + novas) --
-      // nao apenas quando ha gente nova confirmada.
+      // convertidos.json e sempre regravado ao final de cada comparacao.
       const agora = new Date().toISOString();
       const novoConvertidos: ConvertidosMap = { ...convertidosAtuais };
       for (const linha of resultado.linhas) {
@@ -78,20 +77,45 @@ export function useComparativoData() {
     });
   }, [linhas, search]);
 
-  const followUp = useMemo(() => getFollowUp(linhas), [linhas]);
+  const convertidosLinhas = useMemo(
+    () => linhasFiltradas.filter((l) => l.status === "entrou"),
+    [linhasFiltradas]
+  );
+  const followUpLinhas = useMemo(
+    () => linhasFiltradas.filter((l) => l.status === "pendente"),
+    [linhasFiltradas]
+  );
 
-  const exportarFollowUp = useCallback(async () => {
+  const convertidosPaginacao = usePagination(convertidosLinhas);
+  const followUpPaginacao = usePagination(followUpLinhas);
+
+  const exportar = useCallback(async (csvContent: string, prefixo: string) => {
     setExportando(true);
     try {
-      const csv = buildFollowUpCsv(followUp);
-      await exportFollowUpCsv(csv);
+      await exportCsvFile(csvContent, prefixo);
     } finally {
       setExportando(false);
     }
-  }, [followUp]);
+  }, []);
+
+  const exportarConvertidosPagina = useCallback(
+    () => exportar(buildConvertidosCsv(convertidosPaginacao.pageRows), "convertidos-pagina"),
+    [exportar, convertidosPaginacao.pageRows]
+  );
+  const exportarConvertidosTudo = useCallback(
+    () => exportar(buildConvertidosCsv(convertidosLinhas), "convertidos-completo"),
+    [exportar, convertidosLinhas]
+  );
+  const exportarFollowUpPagina = useCallback(
+    () => exportar(buildFollowUpCsv(followUpPaginacao.pageRows), "follow-up-pagina"),
+    [exportar, followUpPaginacao.pageRows]
+  );
+  const exportarFollowUpTudo = useCallback(
+    () => exportar(buildFollowUpCsv(followUpLinhas), "follow-up-completo"),
+    [exportar, followUpLinhas]
+  );
 
   return {
-    linhasFiltradas,
     totalLinhas: linhas.length,
     stats,
     search,
@@ -100,8 +124,12 @@ export function useComparativoData() {
     error,
     rodarComparativo,
     arquivoGrupoNome,
-    followUp,
-    exportarFollowUp,
-    exportando
+    exportando,
+    convertidos: { linhas: convertidosLinhas, paginacao: convertidosPaginacao },
+    followUp: { linhas: followUpLinhas, paginacao: followUpPaginacao },
+    exportarConvertidosPagina,
+    exportarConvertidosTudo,
+    exportarFollowUpPagina,
+    exportarFollowUpTudo
   };
 }

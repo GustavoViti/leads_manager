@@ -1,13 +1,14 @@
 import { StatCard } from "@/components/StatCard";
 import { SearchBar } from "@/components/SearchBar";
-import { ComparativoTable } from "@/components/ComparativoTable";
+import { ConvertidosTable } from "@/components/ConvertidosTable";
+import { FollowUpTable } from "@/components/FollowUpTable";
+import { ComparativoPanel } from "@/components/ComparativoPanel";
 import { Loading } from "@/components/Loading";
 import { formatPercent } from "@/utils/format";
 import { useComparativoData } from "@/hooks/useComparativoData";
 
 export function ComparativoPage() {
   const {
-    linhasFiltradas,
     totalLinhas,
     stats,
     search,
@@ -16,9 +17,13 @@ export function ComparativoPage() {
     error,
     rodarComparativo,
     arquivoGrupoNome,
+    exportando,
+    convertidos,
     followUp,
-    exportarFollowUp,
-    exportando
+    exportarConvertidosPagina,
+    exportarConvertidosTudo,
+    exportarFollowUpPagina,
+    exportarFollowUpTudo
   } = useComparativoData();
 
   return (
@@ -58,31 +63,52 @@ export function ComparativoPage() {
         </div>
       )}
 
-      {stats && (
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <SearchBar value={search} onChange={setSearch} placeholder="Pesquisar por nome ou telefone..." />
-          <button className="btn-secondary" onClick={exportarFollowUp} disabled={exportando || followUp.length === 0}>
-            {exportando ? (
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-500 border-t-slate-200" />
-            ) : (
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            )}
-            Gerar lista de Follow-up ({followUp.length})
-          </button>
-        </div>
-      )}
+      {stats && <SearchBar value={search} onChange={setSearch} placeholder="Pesquisar por nome ou telefone..." />}
 
       {loading ? (
         <Loading label="Comparando com o grupo atualizado..." />
       ) : (
-        <ComparativoTable linhas={linhasFiltradas} />
+        stats && (
+          <div className="flex flex-col gap-6 lg:flex-row">
+            <ComparativoPanel
+              title="Convertidos"
+              accent="success"
+              table={<ConvertidosTable linhas={convertidos.paginacao.pageRows} />}
+              count={convertidos.linhas.length}
+              page={convertidos.paginacao.page}
+              totalPages={convertidos.paginacao.totalPages}
+              startIndex={convertidos.paginacao.startIndex}
+              endIndex={convertidos.paginacao.endIndex}
+              onPrevious={convertidos.paginacao.goToPrevious}
+              onNext={convertidos.paginacao.goToNext}
+              onExportPage={exportarConvertidosPagina}
+              onExportAll={exportarConvertidosTudo}
+              exporting={exportando}
+            />
+
+            <ComparativoPanel
+              title="Precisam de follow-up"
+              accent="warning"
+              table={<FollowUpTable linhas={followUp.paginacao.pageRows} />}
+              count={followUp.linhas.length}
+              page={followUp.paginacao.page}
+              totalPages={followUp.paginacao.totalPages}
+              startIndex={followUp.paginacao.startIndex}
+              endIndex={followUp.paginacao.endIndex}
+              onPrevious={followUp.paginacao.goToPrevious}
+              onNext={followUp.paginacao.goToNext}
+              onExportPage={exportarFollowUpPagina}
+              onExportAll={exportarFollowUpTudo}
+              exporting={exportando}
+            />
+          </div>
+        )
       )}
 
       {stats && (
         <p className="text-xs text-slate-500">
-          Exibindo {linhasFiltradas.length} de {totalLinhas} convites enviados.
+          {totalLinhas} convites enviados no total • {convertidos.linhas.length} convertidos • {followUp.linhas.length}{" "}
+          precisam de follow-up.
         </p>
       )}
     </div>

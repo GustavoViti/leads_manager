@@ -61,8 +61,8 @@ export async function writeConvertidos(filePath: string, data: ConvertidosMap): 
   await window.api.writeJson(filePath, data);
 }
 
-export async function exportFollowUpCsv(csvContent: string): Promise<boolean> {
-  const suggestedName = `follow-up-${new Date().toISOString().slice(0, 10)}.csv`;
+export async function exportCsvFile(csvContent: string, prefixoNome: string): Promise<boolean> {
+  const suggestedName = `${prefixoNome}-${new Date().toISOString().slice(0, 10)}.csv`;
   const savePath = await window.api.selectCsvSaveLocation(suggestedName);
   if (!savePath) return false;
   await window.api.writeCsv(savePath, csvContent);

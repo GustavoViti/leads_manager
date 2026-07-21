@@ -19,3 +19,18 @@ export function buildFollowUpCsv(linhas: ComparativoRow[]): string {
   );
   return [cabecalho.join(";"), ...corpo].join("\n");
 }
+
+/**
+ * Gera o conteudo CSV da lista de convertidos: pessoas que receberam convite
+ * e realmente entraram no grupo. Inclui a data do convite e a data de
+ * confirmacao (quando entraram).
+ */
+export function buildConvertidosCsv(linhas: ComparativoRow[]): string {
+  const cabecalho = ["Nome", "Telefone", "Data do Convite", "Data de Confirmação"];
+  const corpo = linhas.map((l) =>
+    [l.nome, l.telefoneFormatado, formatDateTime(l.dataEnvio), formatDateTime(l.confirmadoEm)].map(
+      escapeCsvField
+    ).join(";")
+  );
+  return [cabecalho.join(";"), ...corpo].join("\n");
+}
