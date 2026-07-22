@@ -18,6 +18,7 @@ export function useLeadsData() {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [enviandoTelefone, setEnviandoTelefone] = useState<string | null>(null);
+  const [excluindoTelefone, setExcluindoTelefone] = useState<string | null>(null);
 
   const carregarTudo = useCallback(async () => {
     if (!paths.leadsPath || !paths.membrosPath) return;
@@ -86,6 +87,34 @@ export function useLeadsData() {
     [enviados, enviadosPath]
   );
 
+  /**
+   * Descarta um lead que nao interessa (ex: numero errado, nao e revendedor
+   * de veiculos, etc). Usa o mesmo enviados.json como registro -- com status
+   * "descartado" -- para que o lead nunca mais volte a aparecer na lista,
+   * do mesmo jeito que acontece com quem ja recebeu convite.
+   */
+  const marcarComoExcluido = useCallback(
+    async (lead: LeadRow) => {
+      if (!enviadosPath) return;
+      setExcluindoTelefone(lead.telefone);
+      try {
+        const novoEnviados: EnviadosMap = {
+          ...enviados,
+          [lead.telefone]: {
+            status: "descartado",
+            em: new Date().toISOString(),
+            nome: lead.nome
+          }
+        };
+        await writeEnviados(enviadosPath, novoEnviados);
+        setEnviados(novoEnviados);
+      } finally {
+        setExcluindoTelefone(null);
+      }
+    },
+    [enviados, enviadosPath]
+  );
+
   return {
     loading,
     error,
@@ -96,6 +125,8 @@ export function useLeadsData() {
     totalEnviadosAteAgora: Object.keys(enviados).length,
     marcarComoEnviado,
     enviandoTelefone,
+    marcarComoExcluido,
+    excluindoTelefone,
     recarregar: carregarTudo
   };
 }

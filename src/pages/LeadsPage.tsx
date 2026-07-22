@@ -14,7 +14,9 @@ export function LeadsPage() {
     totalPendentes,
     totalEnviadosAteAgora,
     marcarComoEnviado,
-    enviandoTelefone
+    enviandoTelefone,
+    marcarComoExcluido,
+    excluindoTelefone
   } = useLeadsDataContext();
 
   return (
@@ -41,7 +43,13 @@ export function LeadsPage() {
       )}
 
       {loading ? <Loading label="Carregando leads..." /> : (
-        <LeadsTable leads={leadsFiltrados} onEnviar={marcarComoEnviado} enviandoTelefone={enviandoTelefone} />
+        <LeadsTable
+          leads={leadsFiltrados}
+          onEnviar={marcarComoEnviado}
+          enviandoTelefone={enviandoTelefone}
+          onExcluir={marcarComoExcluido}
+          excluindoTelefone={excluindoTelefone}
+        />
       )}
     </div>
   );

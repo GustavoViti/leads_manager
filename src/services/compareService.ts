@@ -6,9 +6,12 @@ import { bestName, formatPhoneForDisplay, normalizePhone } from "@/utils/phone";
 
 /**
  * Tela 1: retorna somente os leads cujo telefone normalizado ainda NAO esta
- * entre os membros atuais do grupo E que ainda NAO receberam convite
- * (ja registrados em enviados.json). Assim que um lead e marcado como
- * "Enviado", ele passa a existir em enviados.json e some desta lista.
+ * entre os membros atuais do grupo E que ainda NAO tem nenhum registro em
+ * enviados.json (seja porque ja recebeu convite -- status "enviado" -- seja
+ * porque foi descartado manualmente -- status "descartado"). Assim que um
+ * lead e marcado como "Enviado" ou "Excluido", ele passa a existir em
+ * enviados.json e some desta lista. Tambem remove duplicados dentro do
+ * proprio arquivo de leads (mesmo telefone aparecendo mais de uma vez).
  */
 export function getLeadsPendentes(
   leads: WhatsAppContactList,
